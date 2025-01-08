@@ -41,7 +41,6 @@ end)
 
 -- Delete Modus
 local deleteMode = false
-local deletedObjects = {}
 local deleteButton = Instance.new("TextButton")
 deleteButton.Size = UDim2.new(1, -10, 0, 40)
 deleteButton.Position = UDim2.new(0, 5, 0, 10)
@@ -55,23 +54,12 @@ deleteButton.Parent = mainMenu
 deleteButton.MouseButton1Click:Connect(function()
     deleteMode = not deleteMode
     deleteButton.Text = deleteMode and "Delete Mode (ON)" or "Delete Mode (OFF)"
-
-    if not deleteMode then
-        -- Wiederherstellen gelöschter Objekte
-        for _, obj in ipairs(deletedObjects) do
-            if obj and obj.Parent == nil then
-                obj.Parent = game.Workspace
-            end
-        end
-        deletedObjects = {}
-    end
 end)
 
 -- Löschen-Funktion
 local function deleteObject(object)
     if deleteMode and object and object:IsDescendantOf(game.Workspace) then
-        table.insert(deletedObjects, object)
-        object.Parent = nil
+        object:Destroy()
     end
 end
 
