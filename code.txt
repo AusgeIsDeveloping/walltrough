@@ -1,28 +1,14 @@
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "RainbowGui"
+screenGui.Name = "WallFeaturesGui"
 screenGui.Parent = game.CoreGui
 
--- Rainbow Effekt Funktion
-local function getRainbowColor()
-    local time = tick()
-    return Color3.fromHSV(time % 5 / 5, 1, 1)
-end
-
--- Hauptmenü (standardmäßig unsichtbar)
+-- Hauptmenü
 local mainMenu = Instance.new("Frame")
-mainMenu.Size = UDim2.new(0, 200, 0, 150)
-mainMenu.Position = UDim2.new(1, -210, 1, -210)
+mainMenu.Size = UDim2.new(0, 300, 0, 400)
+mainMenu.Position = UDim2.new(1, -310, 1, -410)
 mainMenu.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 mainMenu.Visible = false
 mainMenu.Parent = screenGui
-
-local function createRainbowBackground(frame)
-    game:GetService("RunService").Heartbeat:Connect(function()
-        frame.BackgroundColor3 = getRainbowColor()
-    end)
-end
-
-createRainbowBackground(mainMenu)
 
 -- Menü Button (unten rechts)
 local menuButton = Instance.new("TextButton")
@@ -39,12 +25,42 @@ menuButton.MouseButton1Click:Connect(function()
     mainMenu.Visible = not mainMenu.Visible
 end)
 
--- Delete Modus
+-- Speicher für Wände
+local wallStorage = {}
+
+-- Noclip Feature
+local noclipEnabled = false
+local noclipButton = Instance.new("TextButton")
+noclipButton.Size = UDim2.new(1, -10, 0, 40)
+noclipButton.Position = UDim2.new(0, 5, 0, 10)
+noclipButton.Text = "Toggle Noclip"
+noclipButton.TextSize = 18
+noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+noclipButton.Font = Enum.Font.SourceSans
+noclipButton.Parent = mainMenu
+
+noclipButton.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    noclipButton.Text = noclipEnabled and "Noclip (ON)" or "Noclip (OFF)"
+end)
+
+game:GetService("RunService").Stepped:Connect(function()
+    if noclipEnabled and game.Players.LocalPlayer.Character then
+        for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Wall Delete Feature
 local deleteMode = false
 local deleteButton = Instance.new("TextButton")
 deleteButton.Size = UDim2.new(1, -10, 0, 40)
-deleteButton.Position = UDim2.new(0, 5, 0, 10)
-deleteButton.Text = "Toggle Delete Mode"
+deleteButton.Position = UDim2.new(0, 5, 0, 60)
+deleteButton.Text = "Toggle Wall Delete"
 deleteButton.TextSize = 18
 deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 deleteButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -53,27 +69,120 @@ deleteButton.Parent = mainMenu
 
 deleteButton.MouseButton1Click:Connect(function()
     deleteMode = not deleteMode
-    deleteButton.Text = deleteMode and "Delete Mode (ON)" or "Delete Mode (OFF)"
+    deleteButton.Text = deleteMode and "Wall Delete (ON)" or "Wall Delete (OFF)"
 end)
 
--- Löschen-Funktion
-local function deleteObject(object)
-    if deleteMode and object and object:IsDescendantOf(game.Workspace) then
-        object:Destroy()
-    end
-end
-
--- Mausklick-Handling
 game:GetService("UserInputService").InputBegan:Connect(function(input)
     if deleteMode and input.UserInputType == Enum.UserInputType.MouseButton1 then
         local player = game.Players.LocalPlayer
         local mouse = player:GetMouse()
         if mouse.Target then
-            deleteObject(mouse.Target)
+            mouse.Target:Destroy()
         end
     end
 end)
 
--- Rainbow Effekt für Buttons
-createRainbowBackground(deleteButton)
-createRainbowBackground(menuButton)
+-- Wall Transparency Feature
+local transparencyMode = false
+local transparencyButton = Instance.new("TextButton")
+transparencyButton.Size = UDim2.new(1, -10, 0, 40)
+transparencyButton.Position = UDim2.new(0, 5, 0, 110)
+transparencyButton.Text = "Toggle Wall Transparency"
+transparencyButton.TextSize = 18
+transparencyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+transparencyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+transparencyButton.Font = Enum.Font.SourceSans
+transparencyButton.Parent = mainMenu
+
+transparencyButton.MouseButton1Click:Connect(function()
+    transparencyMode = not transparencyMode
+    transparencyButton.Text = transparencyMode and "Wall Transparency (ON)" or "Wall Transparency (OFF)"
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if transparencyMode and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local player = game.Players.LocalPlayer
+        local mouse = player:GetMouse()
+        if mouse.Target and mouse.Target:IsA("BasePart") then
+            mouse.Target.Transparency = 0.5
+            table.insert(wallStorage, mouse.Target)
+        end
+    end
+end)
+
+-- Wall Shrink Feature
+local shrinkMode = false
+local shrinkButton = Instance.new("TextButton")
+shrinkButton.Size = UDim2.new(1, -10, 0, 40)
+shrinkButton.Position = UDim2.new(0, 5, 0, 160)
+shrinkButton.Text = "Toggle Wall Shrink"
+shrinkButton.TextSize = 18
+shrinkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+shrinkButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+shrinkButton.Font = Enum.Font.SourceSans
+shrinkButton.Parent = mainMenu
+
+shrinkButton.MouseButton1Click:Connect(function()
+    shrinkMode = not shrinkMode
+    shrinkButton.Text = shrinkMode and "Wall Shrink (ON)" or "Wall Shrink (OFF)"
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if shrinkMode and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local player = game.Players.LocalPlayer
+        local mouse = player:GetMouse()
+        if mouse.Target and mouse.Target:IsA("BasePart") then
+            mouse.Target.Size = mouse.Target.Size * 0.5
+            table.insert(wallStorage, mouse.Target)
+        end
+    end
+end)
+
+-- Wall Restore Feature
+local restoreButton = Instance.new("TextButton")
+restoreButton.Size = UDim2.new(1, -10, 0, 40)
+restoreButton.Position = UDim2.new(0, 5, 0, 210)
+restoreButton.Text = "Restore Walls"
+restoreButton.TextSize = 18
+restoreButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+restoreButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+restoreButton.Font = Enum.Font.SourceSans
+restoreButton.Parent = mainMenu
+
+restoreButton.MouseButton1Click:Connect(function()
+    for _, wall in pairs(wallStorage) do
+        if wall:IsA("BasePart") then
+            wall.Transparency = 0
+            wall.Size = Vector3.new(4, 4, 4) -- Beispielgröße
+        end
+    end
+    wallStorage = {}
+end)
+
+-- Wall Push Feature
+local pushMode = false
+local pushButton = Instance.new("TextButton")
+pushButton.Size = UDim2.new(1, -10, 0, 40)
+pushButton.Position = UDim2.new(0, 5, 0, 260)
+pushButton.Text = "Toggle Wall Push"
+pushButton.TextSize = 18
+pushButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+pushButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+pushButton.Font = Enum.Font.SourceSans
+pushButton.Parent = mainMenu
+
+pushButton.MouseButton1Click:Connect(function()
+    pushMode = not pushMode
+    pushButton.Text = pushMode and "Wall Push (ON)" or "Wall Push (OFF)"
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if pushMode and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local player = game.Players.LocalPlayer
+        local mouse = player:GetMouse()
+        if mouse.Target and mouse.Target:IsA("BasePart") then
+            mouse.Target.CFrame = mouse.Target.CFrame + Vector3.new(5, 0, 0) -- Schiebe nach rechts
+            table.insert(wallStorage, mouse.Target)
+        end
+    end
+end)
