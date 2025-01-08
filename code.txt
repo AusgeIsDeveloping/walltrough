@@ -16,42 +16,84 @@ local function createRainbowBackground(frame)
     end)
 end
 
--- Noclip und Speed Modifikationen
-local noclip = false
-local canDelete = false
-local deletedObjects = {}
-
--- Erstelle das Hauptframe
+-- Hauptmenü Frame (zunächst unsichtbar)
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 300, 0, 200)
 mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+mainFrame.Visible = false
 mainFrame.Parent = screenGui
-
 createRainbowBackground(mainFrame)
 
--- Noclip Toggle Button
+-- Key Eingabe Frame
+local keyFrame = Instance.new("Frame")
+keyFrame.Size = UDim2.new(0, 300, 0, 150)
+keyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+keyFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+keyFrame.Parent = screenGui
+
+local keyTextBox = Instance.new("TextBox")
+keyTextBox.Size = UDim2.new(1, -20, 0, 50)
+keyTextBox.Position = UDim2.new(0, 10, 0.5, -25)
+keyTextBox.PlaceholderText = "Enter Key"
+keyTextBox.Text = ""
+keyTextBox.TextSize = 18
+keyTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+keyTextBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+keyTextBox.Font = Enum.Font.SourceSans
+keyTextBox.Parent = keyFrame
+
+local submitKeyButton = Instance.new("TextButton")
+submitKeyButton.Size = UDim2.new(1, -20, 0, 40)
+submitKeyButton.Position = UDim2.new(0, 10, 1, -50)
+submitKeyButton.Text = "Submit Key"
+submitKeyButton.TextSize = 18
+submitKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+submitKeyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+submitKeyButton.Font = Enum.Font.SourceSans
+submitKeyButton.Parent = keyFrame
+
+submitKeyButton.MouseButton1Click:Connect(function()
+    if keyTextBox.Text == "2222" then
+        keyFrame.Visible = false
+        mainFrame.Visible = true
+    else
+        keyTextBox.Text = "Invalid Key"
+        task.wait(1)
+        keyTextBox.Text = ""
+    end
+end)
+
+-- Toggle Status Anzeige
+local function updateToggleStatus(button, isActive)
+    button.Text = isActive and button.Text .. " (ON)" or button.Text:gsub(" %(ON%)", "")
+end
+
+-- Noclip und Speed
+local noclip = false
+local canDelete = false
+local deletedObjects = {}
+
 local noclipButton = Instance.new("TextButton")
 noclipButton.Size = UDim2.new(1, -10, 0, 40)
-noclipButton.Position = UDim2.new(0, 5, 0, 60)
+noclipButton.Position = UDim2.new(0, 5, 0, 10)
 noclipButton.Text = "Toggle Noclip"
+noclipButton.TextSize = 18
 noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 noclipButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 noclipButton.Font = Enum.Font.SourceSans
-noclipButton.TextSize = 18
 noclipButton.Parent = mainFrame
 
 noclipButton.MouseButton1Click:Connect(function()
     noclip = not noclip
+    updateToggleStatus(noclipButton, noclip)
     if noclip then
-        -- Verdoppelt die Geschwindigkeit, wenn Noclip aktiviert ist
         local player = game.Players.LocalPlayer
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             local humanoid = player.Character.Humanoid
             humanoid.WalkSpeed = humanoid.WalkSpeed * 2
         end
     else
-        -- Setzt die Geschwindigkeit zurück, wenn Noclip deaktiviert ist
         local player = game.Players.LocalPlayer
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             local humanoid = player.Character.Humanoid
@@ -60,21 +102,21 @@ noclipButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Gegenstände löschen Button
+-- Löschen-Modus
 local deleteButton = Instance.new("TextButton")
 deleteButton.Size = UDim2.new(1, -10, 0, 40)
-deleteButton.Position = UDim2.new(0, 5, 0, 110)
+deleteButton.Position = UDim2.new(0, 5, 0, 60)
 deleteButton.Text = "Toggle Delete Mode"
+deleteButton.TextSize = 18
 deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 deleteButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 deleteButton.Font = Enum.Font.SourceSans
-deleteButton.TextSize = 18
 deleteButton.Parent = mainFrame
 
 deleteButton.MouseButton1Click:Connect(function()
     canDelete = not canDelete
+    updateToggleStatus(deleteButton, canDelete)
     if not canDelete then
-        -- Alle gelöschten Objekte zurücksetzen, wenn der Löschmodus deaktiviert wird
         for _, obj in ipairs(deletedObjects) do
             if obj.Parent == nil then
                 obj.Parent = game.Workspace
@@ -84,23 +126,13 @@ deleteButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Überwache Noclip und Geschwindigkeit
-game:GetService("RunService").Stepped:Connect(function(_, dt)
+-- Löschen-Logik
+game:GetService("RunService").Stepped:Connect(function()
     local player = game.Players.LocalPlayer
-    if noclip and player.Character then
-        -- Noclip Logik (Durch Wände gehen)
-        for _, part in pairs(player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
-
     if canDelete then
-        -- Lösche Objekte, die mit der Maus überfahren werden
         local mouse = player:GetMouse()
         local target = mouse.Target
-        if target and target.Parent and target.Parent == game.Workspace then
+        if target and target.Parent == game.Workspace then
             if not table.find(deletedObjects, target) then
                 table.insert(deletedObjects, target)
                 target.Parent = nil
@@ -109,25 +141,19 @@ game:GetService("RunService").Stepped:Connect(function(_, dt)
     end
 end)
 
--- Key für Noclip aktivieren (2827)
-local keyToActivateNoclip = "2827"
-local userInputService = game:GetService("UserInputService")
-local enteredKey = ""
+-- Menü Button (unten rechts)
+local menuButton = Instance.new("TextButton")
+menuButton.Size = UDim2.new(0, 50, 0, 50)
+menuButton.Position = UDim2.new(1, -60, 1, -60)
+menuButton.Text = "≡"
+menuButton.TextSize = 24
+menuButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+menuButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+menuButton.Font = Enum.Font.SourceSans
+menuButton.Parent = screenGui
 
-userInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if gameProcessedEvent then return end
-
-    -- Sammle Tasteneingaben
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        enteredKey = enteredKey .. input.KeyCode.Name
-        if enteredKey == keyToActivateNoclip then
-            noclip = true
-            enteredKey = ""  -- Reset Eingabe
-            noclipButton.Text = "Noclip Activated"
-        elseif #enteredKey > #keyToActivateNoclip then
-            enteredKey = ""  -- Reset Eingabe nach falscher Eingabe
-        end
-    end
+menuButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
 -- Rainbow-Effekt für alle Buttons
