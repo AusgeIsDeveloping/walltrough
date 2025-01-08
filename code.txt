@@ -1,0 +1,137 @@
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RainbowGui"
+screenGui.Parent = game.CoreGui
+
+-- Rainbow Farben Funktion
+local function getRainbowColor()
+    local time = tick()
+    return Color3.fromHSV(time % 5 / 5, 1, 1)
+end
+
+-- Rainbow Hintergrund für GUI
+local function createRainbowBackground(frame)
+    frame.BackgroundColor3 = getRainbowColor()
+    game:GetService("RunService").Heartbeat:Connect(function()
+        frame.BackgroundColor3 = getRainbowColor()
+    end)
+end
+
+-- Noclip und Speed Modifikationen
+local noclip = false
+local canDelete = false
+local deletedObjects = {}
+
+-- Erstelle das Hauptframe
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+mainFrame.Parent = screenGui
+
+createRainbowBackground(mainFrame)
+
+-- Noclip Toggle Button
+local noclipButton = Instance.new("TextButton")
+noclipButton.Size = UDim2.new(1, -10, 0, 40)
+noclipButton.Position = UDim2.new(0, 5, 0, 60)
+noclipButton.Text = "Toggle Noclip"
+noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+noclipButton.Font = Enum.Font.SourceSans
+noclipButton.TextSize = 18
+noclipButton.Parent = mainFrame
+
+noclipButton.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    if noclip then
+        -- Verdoppelt die Geschwindigkeit, wenn Noclip aktiviert ist
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            humanoid.WalkSpeed = humanoid.WalkSpeed * 2
+        end
+    else
+        -- Setzt die Geschwindigkeit zurück, wenn Noclip deaktiviert ist
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            humanoid.WalkSpeed = humanoid.WalkSpeed / 2
+        end
+    end
+end)
+
+-- Gegenstände löschen Button
+local deleteButton = Instance.new("TextButton")
+deleteButton.Size = UDim2.new(1, -10, 0, 40)
+deleteButton.Position = UDim2.new(0, 5, 0, 110)
+deleteButton.Text = "Toggle Delete Mode"
+deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+deleteButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+deleteButton.Font = Enum.Font.SourceSans
+deleteButton.TextSize = 18
+deleteButton.Parent = mainFrame
+
+deleteButton.MouseButton1Click:Connect(function()
+    canDelete = not canDelete
+    if not canDelete then
+        -- Alle gelöschten Objekte zurücksetzen, wenn der Löschmodus deaktiviert wird
+        for _, obj in ipairs(deletedObjects) do
+            if obj.Parent == nil then
+                obj.Parent = game.Workspace
+            end
+        end
+        deletedObjects = {}
+    end
+end)
+
+-- Überwache Noclip und Geschwindigkeit
+game:GetService("RunService").Stepped:Connect(function(_, dt)
+    local player = game.Players.LocalPlayer
+    if noclip and player.Character then
+        -- Noclip Logik (Durch Wände gehen)
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+
+    if canDelete then
+        -- Lösche Objekte, die mit der Maus überfahren werden
+        local mouse = player:GetMouse()
+        local target = mouse.Target
+        if target and target.Parent and target.Parent == game.Workspace then
+            if not table.find(deletedObjects, target) then
+                table.insert(deletedObjects, target)
+                target.Parent = nil
+            end
+        end
+    end
+end)
+
+-- Key für Noclip aktivieren (2827)
+local keyToActivateNoclip = "2827"
+local userInputService = game:GetService("UserInputService")
+local enteredKey = ""
+
+userInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+
+    -- Sammle Tasteneingaben
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        enteredKey = enteredKey .. input.KeyCode.Name
+        if enteredKey == keyToActivateNoclip then
+            noclip = true
+            enteredKey = ""  -- Reset Eingabe
+            noclipButton.Text = "Noclip Activated"
+        elseif #enteredKey > #keyToActivateNoclip then
+            enteredKey = ""  -- Reset Eingabe nach falscher Eingabe
+        end
+    end
+end)
+
+-- Rainbow-Effekt für alle Buttons
+game:GetService("RunService").Heartbeat:Connect(function()
+    noclipButton.BackgroundColor3 = getRainbowColor()
+    deleteButton.BackgroundColor3 = getRainbowColor()
+end)
